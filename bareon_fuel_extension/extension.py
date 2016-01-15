@@ -22,9 +22,14 @@ class BareonExtension(BaseExtension):
     name = 'bareon'
     version = '1.0.0'
     provides = [
+        'get_node_volumes',
         'get_node_simple_volumes',
     ]
     bareon_adapter = BareonAPIAdapter()
+
+    @classmethod
+    def get_node_volumes(cls, node):
+        return cls.bareon_adapter.disks(node.id)
 
     @classmethod
     def get_node_simple_volumes(cls, node):
@@ -35,7 +40,6 @@ class BareonExtension(BaseExtension):
     def _put_disks(cls, node):
         disks = []
         for disk in map(lambda d: d.render(), node.volume_manager.disks):
-            disk.pop('volumes')
             disk['device'] = disk['name']
             disks.append(disk)
 
