@@ -14,8 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from bareon_fuel_extension.adapters import BareonAPIAdapter
 from nailgun.extensions import BaseExtension
+from nailgun.extensions import BaseExtensionPipeline
+from nailgun.extensions import node_extension_call
+
+from bareon_fuel_extension.adapters import BareonAPIAdapter
+
+
+class BareonExtensionPipeline(BaseExtensionPipeline):
+
+    def process_provisioning(data, **kwargs):
+        data['ks_data']['pm_data'].pop('ks_spaces', None)
+        data['partitioning'] = node_extension_call()
 
 
 class BareonExtension(BaseExtension):
