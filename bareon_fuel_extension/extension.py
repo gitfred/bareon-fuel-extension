@@ -23,9 +23,10 @@ from bareon_fuel_extension.adapters import BareonAPIAdapter
 
 class BareonExtensionPipeline(BaseExtensionPipeline):
 
+    @classmethod
     def process_provisioning(data, **kwargs):
         data['ks_data']['pm_data'].pop('ks_spaces', None)
-        data['partitioning'] = node_extension_call()
+        data['partitioning'] = BareonExtension.get_node_simple_volumes(kwargs['nodes'])
 
 
 class BareonExtension(BaseExtension):
@@ -36,6 +37,7 @@ class BareonExtension(BaseExtension):
         'get_node_simple_volumes',
     ]
     bareon_adapter = BareonAPIAdapter()
+    pipeline_data = BareonExtensionPipeline
 
     @classmethod
     def get_node_volumes(cls, node):
