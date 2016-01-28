@@ -16,35 +16,39 @@
 
 from nailgun.extensions import BaseExtension
 from nailgun.extensions import BaseExtensionPipeline
-from nailgun.extensions import node_extension_call
 
 from bareon_fuel_extension.adapters import BareonAPIAdapter
 
 
+BAREON_ADAPTER = BareonAPIAdapter()
+
+
 class BareonExtensionPipeline(BaseExtensionPipeline):
 
-    def process_provisioning(data, **kwargs):
-        data['ks_data']['pm_data'].pop('ks_spaces', None)
-        data['partitioning'] = node_extension_call()
+    @classmethod
+    def process_provisioning(cls, provisionig_data, **kwargs):
+        for node in provisionig_data:
+            node['ks_data']['pm_data'].pop('ks_spaces', None)
+            node['partitioning'] = BAREON_ADAPTER.disks(node['id'])
 
 
 class BareonExtension(BaseExtension):
     name = 'bareon'
     version = '1.0.0'
-    provides = [
+    provides = (
         'get_node_volumes',
         'get_node_simple_volumes',
-    ]
-    bareon_adapter = BareonAPIAdapter()
+    )
+    data_pipelines = (BareonExtensionPipeline,)
 
     @classmethod
     def get_node_volumes(cls, node):
-        return cls.bareon_adapter.disks(node.id)
+        return BAREON_ADAPTER.disks(node.id)
 
     @classmethod
     def get_node_simple_volumes(cls, node):
         "Simple means: 'in simple nailgun format for fuel-agent'"
-        return cls.bareon_adapter.partitioning(node.id)
+        return BAREON_ADAPTER.partitioning(node.id)
 
     @classmethod
     def _put_disks(cls, node):
@@ -53,11 +57,11 @@ class BareonExtension(BaseExtension):
             disk['device'] = disk['name']
             disks.append(disk)
 
-        cls.bareon_adapter.disks(node.id, data=disks)
+        BAREON_ADAPTER.disks(node.id, data=disks)
 
     @classmethod
     def on_node_update(cls, node):
-        if not cls.bareon_adapter.exists(node.id):
+        if not BAREON_ADAPTER.exists(node.id):
             cls.on_node_create(node)
         else:
             cls._put_disks(node)
@@ -65,11 +69,11 @@ class BareonExtension(BaseExtension):
     @classmethod
     def on_node_collection_delete(cls, node_ids):
         for node_id in node_ids:
-            cls.bareon_adapter.delete_node(node_id)
+            BAREON_ADAPTER.delete_node(node_id)
 
     @classmethod
     def on_node_delete(cls, node):
-        cls.bareon_adapter.delete_node(node.id)
+        BAREON_ADAPTER.delete_node(node.id)
 
     @classmethod
     def on_node_reset(cls, node):
@@ -77,5 +81,5 @@ class BareonExtension(BaseExtension):
 
     @classmethod
     def on_node_create(cls, node):
-        cls.bareon_adapter.create_node({'id': node.id})
+        BAREON_ADAPTER.create_node({'id': node.id})
         cls._put_disks(node)
