@@ -27,9 +27,9 @@ class BareonExtensionPipeline(BaseExtensionPipeline):
 
     @classmethod
     def process_provisioning(cls, provisionig_data, **kwargs):
-        for node in provisionig_data:
-            node['ks_data']['pm_data'].pop('ks_spaces', None)
-            node['partitioning'] = BAREON_ADAPTER.disks(node['id'])
+        for node in provisionig_data['nodes']:
+            node['ks_meta']['pm_data'].pop('ks_spaces', None)
+            node['partitioning'] = BAREON_ADAPTER.disks(node['uid'])
 
 
 class BareonExtension(BaseExtension):
